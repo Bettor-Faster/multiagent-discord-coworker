@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "bf-discord",
+  "description": "Discord channel plugin for Claude Code with per-project namespace resolution",
+  "owner": {
+    "name": "Bettor Faster",
+    "email": "dev@bettorfaster.com"
+  },
+  "plugins": [
+    {
+      "name": "discord",
+      "description": "Discord channel for Claude Code — messaging bridge with per-project namespace resolution and built-in access control.",
+      "source": "./external_plugins/discord",
+      "category": "productivity"
+    }
+  ]
+}
