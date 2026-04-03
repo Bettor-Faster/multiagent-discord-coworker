@@ -1,0 +1,6 @@
+{
+  "name": "discord",
+  "description": "Discord channel for Claude Code — messaging bridge with per-project namespace resolution and built-in access control.",
+  "version": "0.1.0",
+  "keywords": ["discord", "messaging", "channel", "mcp", "multi-project"]
+}
