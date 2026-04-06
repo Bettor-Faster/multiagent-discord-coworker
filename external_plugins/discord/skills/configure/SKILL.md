@@ -23,10 +23,8 @@ Arguments passed: `$ARGUMENTS`
 
 Before any file operation, determine the state directory:
 
-1. Look for a `.discord-ns` file starting from the current working directory,
-   walking up to `$HOME`. Read the namespace from the first one found.
-2. If found, the state dir is `~/.claude/channels/<namespace>/`.
-3. If not found, fall back to `~/.claude/channels/discord/`.
+1. Check the `DISCORD_STATE_DIR` environment variable. If set, use it directly.
+2. If not set, fall back to `~/.claude/channels/discord/`.
 
 Use this resolved path for all .env and access.json operations below.
 
