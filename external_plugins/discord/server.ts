@@ -30,34 +30,11 @@ import {
   type Interaction,
 } from 'discord.js'
 import { randomBytes } from 'crypto'
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync, statSync, renameSync, realpathSync, chmodSync, existsSync } from 'fs'
-import { execSync } from 'child_process'
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync, statSync, renameSync, realpathSync, chmodSync } from 'fs'
 import { homedir } from 'os'
-import { join, sep, dirname } from 'path'
+import { join, sep } from 'path'
 
-function resolveStateDir(): string {
-  if (process.env.DISCORD_STATE_DIR) return process.env.DISCORD_STATE_DIR
-  const home = homedir()
-  try {
-    const out = execSync(`lsof -a -p ${process.ppid} -d cwd -Fn 2>/dev/null`, { encoding: 'utf8' })
-    const m = out.match(/\nn(.+)/)
-    if (m) {
-      let dir = m[1]
-      while (dir.length >= home.length) {
-        const f = join(dir, '.discord-ns')
-        if (existsSync(f)) {
-          const ns = readFileSync(f, 'utf8').trim()
-          if (ns) return join(home, '.claude', 'channels', ns)
-        }
-        const parent = dirname(dir)
-        if (parent === dir) break
-        dir = parent
-      }
-    }
-  } catch {}
-  return join(home, '.claude', 'channels', 'discord')
-}
-const STATE_DIR = resolveStateDir()
+const STATE_DIR = process.env.DISCORD_STATE_DIR ?? join(homedir(), '.claude', 'channels', 'discord')
 const ACCESS_FILE = join(STATE_DIR, 'access.json')
 const APPROVED_DIR = join(STATE_DIR, 'approved')
 const ENV_FILE = join(STATE_DIR, '.env')

@@ -1,15 +1,10 @@
 # Discord Channel for Claude Code — Multi-Project Fork
 
-Fork of the official `discord@claude-plugins-official` plugin with **per-project namespace resolution**. Allows multiple Claude Code projects to use different Discord bots simultaneously.
+Fork of the official `discord@claude-plugins-official` plugin that supports **per-project bot isolation** via the `DISCORD_STATE_DIR` environment variable. Each project can use its own bot token and access config.
 
 ## What's different
 
-The official plugin hardcodes `DISCORD_STATE_DIR` in its `.mcp.json`, so every project shares the same bot token and access config. This fork adds `resolveStateDir()` which:
-
-1. Looks up the parent process (Claude Code) working directory
-2. Walks up directories looking for a `.discord-ns` file
-3. Reads the channel namespace from it → resolves to `~/.claude/channels/<namespace>/`
-4. Falls back to `~/.claude/channels/discord/` if no file found
+The official plugin defaults to `~/.claude/channels/discord/` for all projects. This fork is identical except it's distributed as a separate marketplace, so you can run it alongside the official plugin or point each project to a different state directory using `DISCORD_STATE_DIR`.
 
 ## Setup
 
@@ -37,51 +32,61 @@ In `~/.claude/settings.json`:
 
 Remove `"discord@claude-plugins-official": true` from `enabledPlugins` if present.
 
-### 3. Create `.discord-ns` in each project root
+### 3. Create a Discord bot
+
+1. Go to [Discord Developer Portal](https://discord.com/developers/applications) → New Application
+2. Bot tab → Reset Token (copy it, shown only once)
+3. Enable **MESSAGE_CONTENT** privileged intent
+4. Turn off **Public Bot** to lock it down
+5. Invite to your server with `bot` scope + `Send Messages`, `Read Message History`, `Add Reactions` permissions
+
+### 4. Set up the channel state directory
 
 ```bash
-# Project A
-echo "discord-project-a" > ~/WorkProjects/project-a/.discord-ns
-
-# Project B
-echo "discord-project-b" > ~/WorkProjects/project-b/.discord-ns
+mkdir -p ~/.claude/channels/my-project
+echo "DISCORD_BOT_TOKEN=your-token-here" > ~/.claude/channels/my-project/.env
+chmod 600 ~/.claude/channels/my-project/.env
 ```
 
-### 4. Set up each channel
+### 5. Launch Claude Code
 
 ```bash
-mkdir -p ~/.claude/channels/discord-project-a
-echo "DISCORD_BOT_TOKEN=your-token-here" > ~/.claude/channels/discord-project-a/.env
-chmod 600 ~/.claude/channels/discord-project-a/.env
+DISCORD_STATE_DIR=~/.claude/channels/my-project claude --dangerously-load-development-channels plugin:discord@bf-discord
 ```
 
-Then use `/discord:access` to configure access control for each channel.
+> **Important:** Do NOT combine `--channels` and `--dangerously-load-development-channels` for the same plugin. Using both creates duplicate channel entries where the non-dev entry shadows the dev one, causing channel notifications to be silently dropped. Use only `--dangerously-load-development-channels`.
 
-### 5. Launch Claude Code with the channel flag
+### 6. Configure access
 
-```bash
-claude --dangerously-load-development-channels plugin:discord@bf-discord
+Run `/discord:access` in the session, then DM your bot on Discord. It replies with a pairing code. Approve with:
+
+```
+/discord:access pair <code>
 ```
 
-> **Important:** Do NOT combine `--channels` and `--dangerously-load-development-channels` for the same plugin. Using both creates duplicate channel entries where the non-dev entry shadows the dev one, causing the allowlist gate to silently reject channel notifications. Use only `--dangerously-load-development-channels`.
+After pairing, lock it down:
 
-You can also pass `DISCORD_STATE_DIR` explicitly to bypass the `.discord-ns` lookup:
-
-```bash
-DISCORD_STATE_DIR=~/.claude/channels/discord-project-a claude --dangerously-load-development-channels plugin:discord@bf-discord
+```
+/discord:access policy allowlist
 ```
 
 ### Verify
 
-Once launched, run `/discord:configure` in your session to check the connection status, or DM your bot — you should see the message appear inline.
+DM your bot — the message should appear inline in your Claude Code session.
 
-## How namespace resolution works
+## Multi-project usage
 
-When the plugin starts, `resolveStateDir()` resolves the state directory in this order:
+Each project gets its own state directory with a separate bot token and access config:
 
-1. `DISCORD_STATE_DIR` env var (if set, used directly)
-2. Walk up from the Claude Code process's working directory looking for a `.discord-ns` file — read the namespace from it → `~/.claude/channels/<namespace>/`
-3. Fall back to `~/.claude/channels/discord/`
+```bash
+# Project A
+DISCORD_STATE_DIR=~/.claude/channels/discord-project-a claude --dangerously-load-development-channels plugin:discord@bf-discord
+
+# Project B
+DISCORD_STATE_DIR=~/.claude/channels/discord-project-b claude --dangerously-load-development-channels plugin:discord@bf-discord
+```
+
+Without `DISCORD_STATE_DIR`, the plugin falls back to `~/.claude/channels/discord/`.
 
 ## License
 
