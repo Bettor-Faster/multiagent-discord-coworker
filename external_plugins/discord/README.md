@@ -57,6 +57,32 @@ chmod 600 ~/.claude/channels/discord-project-a/.env
 
 Then use `/discord:access` to configure access control for each channel.
 
+### 5. Launch Claude Code with the channel flag
+
+```bash
+claude --dangerously-load-development-channels plugin:discord@bf-discord
+```
+
+> **Important:** Do NOT combine `--channels` and `--dangerously-load-development-channels` for the same plugin. Using both creates duplicate channel entries where the non-dev entry shadows the dev one, causing the allowlist gate to silently reject channel notifications. Use only `--dangerously-load-development-channels`.
+
+You can also pass `DISCORD_STATE_DIR` explicitly to bypass the `.discord-ns` lookup:
+
+```bash
+DISCORD_STATE_DIR=~/.claude/channels/discord-project-a claude --dangerously-load-development-channels plugin:discord@bf-discord
+```
+
+### Verify
+
+Once launched, run `/discord:configure` in your session to check the connection status, or DM your bot — you should see the message appear inline.
+
+## How namespace resolution works
+
+When the plugin starts, `resolveStateDir()` resolves the state directory in this order:
+
+1. `DISCORD_STATE_DIR` env var (if set, used directly)
+2. Walk up from the Claude Code process's working directory looking for a `.discord-ns` file — read the namespace from it → `~/.claude/channels/<namespace>/`
+3. Fall back to `~/.claude/channels/discord/`
+
 ## License
 
 Apache-2.0 (same as upstream)
